@@ -47,7 +47,7 @@ class TorchGA:
 
     self.poplation_stats.update(self.population, self.fitnesses)
 
-
+  @torch.no_grad()
   def next_generation(self):
     elites, elite_fitnesses = k_select(self.population, self.fitnesses, self.num_elites)
     parents, parent_fitnesses = self.selection_method(self.population, self.fitnesses, num_genomes=self.num_offspring)

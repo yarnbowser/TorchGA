@@ -18,12 +18,12 @@ ga = TorchGA(
     initial_population=(torch.rand(pop_size, genome_length, device=device) > 0.5).int(),
     num_elites=10,
     fitness_function=ones_bit_stream(),
-    selection_method='ranked',
-    crossover_function='single point',
+    selection_method='tournament',
+    crossover_function='interleaving',
     mutation_function=torch_ga.mutation.BinaryMutation(mutation_rate=0.001)
 )
 
-stats = ga.run_for(4000)
+stats = ga.run_for(1000)
 
 plt.plot(stats.max_fitnesses, label="max")
 plt.plot(stats.avg_fitnesses, label="avg")
