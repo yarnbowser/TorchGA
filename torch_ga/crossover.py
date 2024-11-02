@@ -10,6 +10,24 @@ class CrossoverFunction(ABC):
   def __call__(self, first_parents: torch.Tensor, second_parents: torch.Tensor) -> torch.Tensor:
     pass
 
+  def get_crossover_by_name(crossover_function: str):
+    match crossover_function.lower():
+      case 'interleaving':
+        return InterleavingCrossover()
+      case 'uniform':
+        return InterleavingCrossover()
+      case 'single_point':
+        return SinglePointCrossover()
+      case 'single point':
+        return SinglePointCrossover()
+      case 'double_point':
+        return DoublePointCrossover()
+      case 'double point':
+        return DoublePointCrossover()
+      case _:
+        raise NotImplementedError(f'{crossover_function} Crossover is not implemented')
+
+
 
 class InterleavingCrossover(CrossoverFunction):
   def __init__(self, crossover_rate=0.5):
@@ -17,6 +35,7 @@ class InterleavingCrossover(CrossoverFunction):
 
   def __call__(self, first_parents: torch.Tensor, second_parents: torch.Tensor) -> torch.Tensor:
     return first_parents.where(torch.rand_like(first_parents, dtype=torch.float16) <= self.crossover_rate, second_parents)
+
 
 
 class SinglePointCrossover(CrossoverFunction):
@@ -29,6 +48,7 @@ class SinglePointCrossover(CrossoverFunction):
     point = torch.randint(0, P, (*B, P, 1), device=first_parents.device)
     crossover_index = point >= torch.arange(0, P, device=first_parents.device).unsqueeze(-1)
     return first_parents.where(skip_crossover | crossover_index, second_parents)
+
 
 
 class DoublePointCrossover(CrossoverFunction):

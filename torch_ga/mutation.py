@@ -4,7 +4,6 @@ from typing import Callable
 from functools import partial
 
 
-
 class MutationFunction(ABC):
   def __init__(self, mutation_rate: float):
     assert mutation_rate >= 0 and mutation_rate <= 1, 'Mutation rate must be between 0 and 1'
@@ -13,6 +12,8 @@ class MutationFunction(ABC):
   @abstractmethod
   def __call__(self, population: torch.Tensor) -> torch.Tensor:
     pass
+
+
 
 class BinaryMutation(MutationFunction):
   def __init__(self, mutation_rate: float):

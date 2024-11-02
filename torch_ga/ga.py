@@ -1,35 +1,34 @@
 import torch
-from typing import Callable
+from typing import Callable, Tuple
 
-from selection import SelectionMethod
-from mutation import MutationFunction
-from crossover import CrossoverFunction
-from fitness import FitnessFunction
-from stats import PopulationStats, FitnessStats
+from .selection import SelectionMethod
+from .mutation import MutationFunction
+from .crossover import CrossoverFunction
+from .fitness import FitnessFunction
+from .stats import PopulationStats, FitnessStats
+from .utils import k_select
 
-class VectorizedGA:
+class TorchGA:
   def __init__(
     self,
     initial_population: torch.Tensor,
-    mutation_rate: float,
     num_elites: int,
-    selection_method: SelectionMethod | Callable[[torch.Tensor, torch.Tensor, int], torch.Tensor],
     fitness_function: FitnessFunction | Callable[[torch.Tensor], torch.Tensor],
-    crossover_function: CrossoverFunction | Callable[[torch.Tensor, torch.Tensor | None], torch.Tensor],
+    selection_method: SelectionMethod | Callable[[torch.Tensor, torch.Tensor, int], Tuple[torch.Tensor, torch.Tensor]] | str,
+    crossover_function: CrossoverFunction | Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | str,
     mutation_function: MutationFunction | Callable[[torch.Tensor], torch.Tensor],
     population_stats: PopulationStats=FitnessStats()
   ):
 
     assert initial_population.dim() == 2 or initial_population.dim() == 3, 'Population must be in the shape of (Pop_Size, Genome_Length) or (Num_Objectives, Pop_Size, Genome_Length)'
-    assert mutation_rate >= 0 and mutation_rate <= 1, 'Mutation rate must be between 0 and 1'
-    assert type(fitness_function = FitnessFunction), "Fitness function must extend abstract type FitnessFunction"
-    assert type(crossover_function = CrossoverFunction), "Crossover function must extend abstract type CrossoverFunction"
-    assert type(mutation_function = MutationFunction), "Mutation function must extend abstract type MutationFunction"
-    assert type(population_stats = PopulationStats), "Stats object function must extend abstract type PopulationStats"
-
+    
+    if isinstance(selection_method, str):
+      selection_method = SelectionMethod.get_selection_by_name(selection_method)
+    
+    if isinstance(crossover_function, str):
+      crossover_function = CrossoverFunction.get_crossover_by_name(crossover_function)
 
     self.population = initial_population
-    self.mutation_rate = mutation_rate
     self.num_elites = num_elites
     self.fitness_function = fitness_function
     self.crossover_function = crossover_function
@@ -37,11 +36,9 @@ class VectorizedGA:
     self.selection_method = selection_method
     self.poplation_stats = population_stats
 
-    if self.population.dim() == 2:
-      self.population = self.population.unsqueeze(0) # Add the objective dimension if none was given
 
     # O, P, G = Num_Objectives, Pop_Size, Genome_length
-    O, P, G = self.population.size()
+    *_, P, G = self.population.size()
 
     assert num_elites > 0 and num_elites < P, "Number of elites must be greater than 0 and less than population size"
 
@@ -52,10 +49,10 @@ class VectorizedGA:
 
 
   def next_generation(self):
-    elites, elite_fitnesses = SelectionMethod.k_select(self.population, self.fitnesses, self.num_elites)
-    parents = self.selection_method(self.population, self.fitnesses, num_genomes=self.num_offspring)
+    elites, elite_fitnesses = k_select(self.population, self.fitnesses, self.num_elites)
+    parents, parent_fitnesses = self.selection_method(self.population, self.fitnesses, num_genomes=self.num_offspring)
 
-    offspring = self.crossover_function(parents)
+    offspring = self.crossover_function(parents, parents.flip(-2))
     offspring = self.mutation_function(offspring)
     offspring_fitnesses = self.fitness_function(offspring)
 
