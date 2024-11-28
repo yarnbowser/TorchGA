@@ -29,6 +29,7 @@ class TorchGA:
       crossover_function = CrossoverFunction.get_crossover_by_name(crossover_function)
 
     self.population = initial_population
+    self.initial_population = initial_population
     self.num_elites = num_elites
     self.fitness_function = fitness_function
     self.crossover_function = crossover_function
@@ -47,6 +48,12 @@ class TorchGA:
 
     self.poplation_stats.update(self.population, self.fitnesses)
 
+  def reset(self):
+    self.population = self.initial_population
+    self.fitnesses = self.fitness_function(self.population)
+    self.poplation_stats.clear()
+
+
   @torch.no_grad()
   def next_generation(self):
     elites, elite_fitnesses = k_select(self.population, self.fitnesses, self.num_elites)
@@ -61,7 +68,7 @@ class TorchGA:
 
     return self.population, self.fitnesses
 
-
+  @torch.no_grad()
   def run_for(self, num_generations):
     for _ in range(num_generations):
       self.next_generation()
@@ -69,4 +76,4 @@ class TorchGA:
 
     return self.poplation_stats
 
-    
+
