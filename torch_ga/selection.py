@@ -57,7 +57,7 @@ class RankedSelection(SelectionMethod):
     self.replacement = replacement
 
   def __call__(self, population: torch.Tensor, fitnesses: torch.Tensor, num_genomes: int) -> torch.Tensor:
-    probs = torch.argsort(fitnesses, dim=-1) + 1
+    probs = fitnesses.argsort(dim=-1) + 1
     return sample(population, fitnesses, probs.double(), num_genomes, replacement=self.replacement)
 
 
